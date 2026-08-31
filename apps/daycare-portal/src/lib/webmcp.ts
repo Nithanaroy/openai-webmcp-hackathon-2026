@@ -64,7 +64,15 @@ export function useModelContextTools(build: () => WebmcpToolDef[]): void {
     if (!mc) return;
     const controller = new AbortController();
     for (const def of buildRef.current()) {
-      mc.registerTool(def, { signal: controller.signal });
+      // registerTool may return a promise that rejects with AbortError when the
+      // effect tears down (React dev double-invokes effects). Swallow that;
+      // surface anything unexpected.
+      Promise.resolve(mc.registerTool(def, { signal: controller.signal })).catch(
+        (err) => {
+          if (controller.signal.aborted) return;
+          console.error(`WebMCP: failed to register tool "${def.name}"`, err);
+        },
+      );
     }
     return () => controller.abort();
   }, []);
