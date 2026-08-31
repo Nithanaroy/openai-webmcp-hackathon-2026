@@ -1,4 +1,5 @@
 import PharmacyPortal from "@/components/PharmacyPortal";
+import WebmcpBadge from "@/components/WebmcpBadge";
 
 export default function Home() {
   return (
@@ -32,6 +33,9 @@ export default function Home() {
           <p className="mt-1 text-sm text-slate-500">
             Real-time stock varies by location. Reserve a hold to guarantee pickup.
           </p>
+          <div className="mt-4">
+            <WebmcpBadge accent="teal" />
+          </div>
         </div>
         <PharmacyPortal />
       </main>

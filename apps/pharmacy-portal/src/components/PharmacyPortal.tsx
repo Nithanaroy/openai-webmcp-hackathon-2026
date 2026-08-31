@@ -10,6 +10,7 @@ import {
   medicationById,
 } from "@/lib/data";
 import type { Pharmacy, Reservation, StockStatus } from "@/lib/types";
+import { usePharmacyWebmcp, type PharmacyApi } from "@/components/usePharmacyWebmcp";
 
 const STATUS_META: Record<StockStatus, { label: string; cls: string }> = {
   "in-stock": { label: "In stock", cls: "bg-emerald-100 text-emerald-700" },
@@ -45,14 +46,40 @@ export default function PharmacyPortal() {
     }, 700);
   }
 
-  function reserve(pharmacy: Pharmacy) {
-    setReservation({
+  function reserve(pharmacy: Pharmacy): Reservation {
+    const r: Reservation = {
       code: `PH-${Math.floor(1000 + Math.random() * 8999)}`,
       pharmacyId: pharmacy.id,
       medicationId,
       expiresAt: Date.now() + RESERVATION_MINUTES * 60 * 1000,
-    });
+    };
+    setReservation(r);
+    return r;
   }
+
+  // Expose the pharmacy actions to a WebMCP agent via a live ref.
+  const apiRef = useRef<PharmacyApi>({} as PharmacyApi);
+  apiRef.current = {
+    medicationId,
+    zip,
+    reservation,
+    setMedication: (id) => {
+      setMedicationId(id);
+      setSearched(false);
+      setReservation(null);
+    },
+    setZip: (z) => setZip(z),
+    search: () => {
+      setSearching(false);
+      setSearched(true);
+    },
+    reserve: (pharmacyId) => {
+      const pharmacy = PHARMACIES.find((p) => p.id === pharmacyId)!;
+      return reserve(pharmacy);
+    },
+    cancel: () => setReservation(null),
+  };
+  usePharmacyWebmcp(apiRef);
 
   const inStockCount = results.filter(
     (p) => p.stock[medicationId]?.status !== "out",
