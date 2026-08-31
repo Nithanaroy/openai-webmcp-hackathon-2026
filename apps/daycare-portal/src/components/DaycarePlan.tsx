@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   COMMON_ALLERGENS,
   PREFILL,
@@ -9,6 +9,7 @@ import {
   crossReactivityFor,
 } from "@/lib/data";
 import type { Allergen, PlanForm, Severity } from "@/lib/types";
+import { useDaycareWebmcp, type DaycareApi } from "@/components/useDaycareWebmcp";
 
 const EMPTY: PlanForm = {
   childName: PREFILL.childName ?? "",
@@ -77,6 +78,28 @@ export default function DaycarePlan() {
         : [...f.symptoms, s],
     }));
   }
+
+  // Expose the plan actions to a WebMCP agent via a live ref.
+  const apiRef = useRef<DaycareApi>({} as DaycareApi);
+  apiRef.current = {
+    form,
+    isComplete: Boolean(complete),
+    patch,
+    addAllergen: (name, severity) =>
+      setForm((f) => ({
+        ...f,
+        allergens: [...f.allergens, { id: crypto.randomUUID(), name, severity, reaction: "" }],
+      })),
+    setSymptoms: (symptoms) => setForm((f) => ({ ...f, symptoms })),
+    generate: () => {
+      if (complete) {
+        setMode("preview");
+        return true;
+      }
+      return false;
+    },
+  };
+  useDaycareWebmcp(apiRef);
 
   if (mode === "preview") {
     return (

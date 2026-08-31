@@ -1,4 +1,5 @@
 import DaycarePlan from "@/components/DaycarePlan";
+import WebmcpBadge from "@/components/WebmcpBadge";
 
 export default function Home() {
   return (
@@ -32,6 +33,9 @@ export default function Home() {
           <p className="mt-1 text-sm text-slate-500">
             Complete this plan so staff know exactly how to keep your child safe.
           </p>
+          <div className="mt-4">
+            <WebmcpBadge accent="emerald" />
+          </div>
         </div>
         <DaycarePlan />
       </main>
