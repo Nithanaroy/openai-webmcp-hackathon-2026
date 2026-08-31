@@ -21,6 +21,8 @@ import {
 } from "@/lib/scheduling";
 import type { Provider, StepId } from "@/lib/types";
 import { useClinicWebmcp, type ClinicApi } from "@/components/useClinicWebmcp";
+import { useCollab } from "@/lib/collab";
+import { CollabLedger, CollabOverlay } from "@/components/CollabPanel";
 
 const STEP_LABELS: Record<StepId, string> = {
   reason: "Reason",
@@ -34,11 +36,12 @@ const STEP_LABELS: Record<StepId, string> = {
 
 export default function ClinicPortal() {
   const [state, dispatch] = useReducer(schedulingReducer, initialState);
+  const collab = useCollab();
 
   // Expose the same booking logic to a WebMCP agent. The ref keeps tool
   // handlers reading live state without re-registering on every change.
-  const apiRef = useRef<ClinicApi>({ state, dispatch });
-  apiRef.current = { state, dispatch };
+  const apiRef = useRef<ClinicApi>({ state, dispatch, collab });
+  apiRef.current = { state, dispatch, collab };
   useClinicWebmcp(apiRef);
 
   const steps = useMemo(() => computeSteps(state), [state]);
@@ -47,7 +50,12 @@ export default function ClinicPortal() {
   const ageLabel = `${Math.floor(ageMonths / 12)}y ${ageMonths % 12}m`;
 
   if (state.confirmation) {
-    return <ConfirmationScreen confirmation={state.confirmation} onReset={() => dispatch({ type: "RESET" })} />;
+    return (
+      <>
+        <ConfirmationScreen confirmation={state.confirmation} onReset={() => dispatch({ type: "RESET" })} />
+        <CollabOverlay pending={collab.pending} />
+      </>
+    );
   }
 
   const proceedOk = canProceed(state, currentStep);
@@ -74,7 +82,7 @@ export default function ClinicPortal() {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[300px_1fr]">
+    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr_300px]">
       <PatientPanel ageLabel={ageLabel} />
 
       <section className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -118,6 +126,9 @@ export default function ClinicPortal() {
           </div>
         </footer>
       </section>
+
+      <CollabLedger ledger={collab.ledger} pending={collab.pending} />
+      <CollabOverlay pending={collab.pending} />
     </div>
   );
 }

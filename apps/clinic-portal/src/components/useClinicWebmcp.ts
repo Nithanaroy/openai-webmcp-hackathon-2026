@@ -24,10 +24,12 @@ import {
   useModelContextTools,
   type WebmcpToolDef,
 } from "@/lib/webmcp";
+import type { CollabController } from "@/lib/collab";
 
 export interface ClinicApi {
   state: SchedulingState;
   dispatch: Dispatch<Action>;
+  collab: CollabController;
 }
 
 const AGE_MONTHS = ageInMonths(PATIENT.dob);
@@ -60,14 +62,17 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           "Read the child's profile and the urgent-care discharge summary on file.",
         inputSchema: { type: "object", properties: {}, additionalProperties: false },
         annotations: { readOnlyHint: true },
-        execute: () => ({
-          patient: `${PATIENT.firstName} ${PATIENT.lastName}`,
-          age: AGE_LABEL,
-          dob: PATIENT.dob,
-          guardian: PATIENT.guardianName,
-          insurance: PATIENT.primaryInsurance,
-          urgent_care: `${DISCHARGE_SUMMARY.facility} (${DISCHARGE_SUMMARY.visitDate}): ${DISCHARGE_SUMMARY.chiefComplaint} Plan: ${DISCHARGE_SUMMARY.plan}`,
-        }),
+        execute: () => {
+          apiRef.current.collab.log("agent", "Read the child's chart and urgent-care summary.");
+          return {
+            patient: `${PATIENT.firstName} ${PATIENT.lastName}`,
+            age: AGE_LABEL,
+            dob: PATIENT.dob,
+            guardian: PATIENT.guardianName,
+            insurance: PATIENT.primaryInsurance,
+            urgent_care: `${DISCHARGE_SUMMARY.facility} (${DISCHARGE_SUMMARY.visitDate}): ${DISCHARGE_SUMMARY.chiefComplaint} Plan: ${DISCHARGE_SUMMARY.plan}`,
+          };
+        },
       },
       {
         name: "get_appointment_options",
@@ -112,6 +117,7 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           const entries = Object.entries(GLOSSARY).filter(
             ([k]) => requested.length === 0 || requested.some((r) => k.includes(r) || r.includes(k)),
           );
+          apiRef.current.collab.log("agent", "Translated the medical terms into plain language.");
           return Object.fromEntries(entries);
         },
       },
@@ -136,7 +142,7 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           additionalProperties: false,
         },
         execute: (input) => {
-          const { dispatch } = apiRef.current;
+          const { dispatch, collab } = apiRef.current;
           const reason = asString(input.reason) ?? "";
           let cat = CATEGORIES.find((c) =>
             c.subReasons.some((s) => s.toLowerCase() === reason.toLowerCase()),
@@ -158,34 +164,86 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           dispatch({ type: "SET_SUBREASON", subReason: sub! });
           dispatch({ type: "SET_VISIT_TYPE", visitType });
           dispatch({ type: "GOTO", step: "visit-type" });
+          collab.log(
+            "agent",
+            `Drafted visit details${
+              visitType === "urgent-referral"
+                ? " (urgent referral — screening & insurance required)"
+                : ""
+            }.`,
+          );
           return `Reason set to "${sub}" (${cat.label}); visit type: ${
             visitType === "urgent-referral" ? "Urgent Referral — Anaphylaxis Risk" : "Routine"
           }.${visitType === "urgent-referral" ? " Screening and insurance are now required." : ""}`;
         },
       },
       {
-        name: "select_provider",
-        description: "Choose the scheduling path: A = regional (fast) or B = academic (scope).",
+        name: "propose_scheduling_paths",
+        description:
+          "Present the two scheduling paths and let the parent choose. Optionally pass your suggested strategy; the parent still decides.",
         inputSchema: {
           type: "object",
           properties: {
-            strategy: {
+            suggested: {
               type: "string",
               enum: ["A", "B", "regional", "academic"],
-              description: "A/regional for speed, B/academic for OIT program.",
+              description: "Optional: the path you'd recommend. The parent makes the final call.",
             },
           },
-          required: ["strategy"],
           additionalProperties: false,
         },
-        execute: (input) => {
-          const { dispatch } = apiRef.current;
-          const s = (asString(input.strategy) ?? "").toLowerCase();
-          const id = s === "a" || s === "regional" ? "regional" : s === "b" || s === "academic" ? "academic" : undefined;
-          if (!id) return "Specify strategy A (regional) or B (academic).";
+        execute: async (input, ctx) => {
+          const { dispatch, collab } = apiRef.current;
+          const sug = (asString(input.suggested) ?? "").toLowerCase();
+          const suggestedId =
+            sug === "a" || sug === "regional"
+              ? "regional"
+              : sug === "b" || sug === "academic"
+                ? "academic"
+                : undefined;
+          collab.log("agent", "Prepared both scheduling paths for you to compare.");
+          const options = PROVIDERS.map((p) => {
+            const oit =
+              p.offersOIT && p.minAgeMonthsForOIT !== undefined
+                ? AGE_MONTHS < p.minAgeMonthsForOIT
+                  ? "Waitlist only (min age 4)"
+                  : "Available"
+                : "Not offered";
+            return {
+              id: p.id,
+              label: `${p.strategyLabel}: ${p.name}`,
+              sublabel: p.org,
+              badge: p.earliestLabel,
+              suggested: p.id === suggestedId,
+              attributes: [
+                { label: "Earliest", value: p.earliestLabel },
+                { label: "Clinical tier", value: p.tier },
+                { label: "Capability", value: p.capability },
+                { label: "OIT for this child", value: oit },
+                { label: "Trade-off", value: p.tradeoff },
+              ],
+            };
+          });
+          let chosen: string;
+          try {
+            chosen = await collab.requestDecision(
+              {
+                title: "Choose a scheduling path",
+                prompt:
+                  "Two clinically valid options with a real speed-vs-scope trade-off. This one's your call.",
+                options,
+              },
+              ctx?.signal,
+            );
+          } catch {
+            return "Still waiting on the parent to choose a scheduling path.";
+          }
+          const id = chosen as "regional" | "academic";
           dispatch({ type: "SET_PROVIDER", providerId: id });
           dispatch({ type: "GOTO", step: "provider" });
-          return `Selected ${providerNameById(id)}.`;
+          return `Parent chose ${providerNameById(id)} (${
+            id === "regional" ? "Strategy A — speed" : "Strategy B — scope"
+          }).`;
         },
       },
       {
@@ -212,7 +270,7 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           additionalProperties: false,
         },
         execute: (input) => {
-          const { dispatch } = apiRef.current;
+          const { dispatch, collab } = apiRef.current;
           const severity = Math.min(5, Math.max(1, asNumber(input.severity) ?? 1));
           dispatch({
             type: "PATCH_SCREENING",
@@ -225,6 +283,7 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
             },
           });
           dispatch({ type: "GOTO", step: "screening" });
+          collab.log("agent", "Drafted the anaphylaxis screening from the discharge notes.");
           return "Screening completed.";
         },
       },
@@ -241,7 +300,7 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           additionalProperties: false,
         },
         execute: (input) => {
-          const { dispatch } = apiRef.current;
+          const { dispatch, collab } = apiRef.current;
           const group = (asString(input.group_number) ?? "").toUpperCase();
           if (!isGroupNumberValid(group)) {
             return "Invalid group number. Use two letters followed by six digits, e.g. BP482019.";
@@ -251,6 +310,7 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
             patch: { groupNumber: group, referralUploaded: asBool(input.referral_uploaded) ?? true },
           });
           dispatch({ type: "GOTO", step: "insurance" });
+          collab.log("agent", "Drafted insurance details and attached the referral.");
           return `Insurance group ${group} accepted; referral attached.`;
         },
       },
@@ -283,10 +343,11 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           },
           additionalProperties: false,
         },
-        execute: (input) => {
-          const { state, dispatch } = apiRef.current;
+        execute: async (input, ctx) => {
+          const { state, dispatch, collab } = apiRef.current;
           if (!state.visitType) return "Set the visit type first (set_visit_details).";
-          if (!state.providerId) return "Select a provider first (select_provider).";
+          if (!state.providerId)
+            return "The parent needs to choose a scheduling path first (propose_scheduling_paths).";
           if (state.visitType === "urgent-referral") {
             if (!canProceed(state, "screening")) return "Screening is incomplete (complete_screening).";
             if (!canProceed(state, "insurance")) return "Insurance is incomplete (submit_insurance).";
@@ -302,6 +363,39 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
             ) ?? slots[0];
           if (!slot) return "No slots available for this selection.";
           const provider = PROVIDERS.find((p) => p.id === state.providerId)!;
+          collab.log(
+            "agent",
+            `Prepared a booking: ${provider.name}, ${formatSlotDate(slot.date)} at ${slot.time}.`,
+          );
+          let approved: boolean;
+          try {
+            approved = await collab.requestConfirm(
+              {
+                title: "Confirm this appointment",
+                intro:
+                  "Review what the assistant prepared. Nothing is booked until you confirm.",
+                rows: [
+                  { label: "Patient", value: `${PATIENT.firstName} ${PATIENT.lastName}` },
+                  { label: "Provider", value: provider.name },
+                  { label: "Location", value: provider.org },
+                  { label: "When", value: `${formatSlotDate(slot.date)} at ${slot.time}` },
+                  {
+                    label: "Visit type",
+                    value:
+                      state.visitType === "urgent-referral"
+                        ? "Urgent Referral — Anaphylaxis Risk"
+                        : "Routine",
+                  },
+                ],
+                confirmLabel: "Confirm booking",
+                caution: "This reserves a real appointment slot.",
+              },
+              ctx?.signal,
+            );
+          } catch {
+            return "Booking is waiting on the parent's confirmation.";
+          }
+          if (!approved) return "The parent declined the booking.";
           const ref = `RVS-${Math.floor(100000 + Math.random() * 899999)}`;
           dispatch({ type: "SET_SLOT", slotId: slot.id });
           dispatch({
