@@ -1,0 +1,90 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: clinic-portal",
+      "type": "shell",
+      "command": "volta run --node 20.20.0 npm run dev -- -p 3000",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/clinic-portal"
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "portals",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": {
+        "owner": "nextjs",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Next\\.js.*",
+          "endsPattern": ".*(Ready in|Local:).*"
+        }
+      }
+    },
+    {
+      "label": "dev: pharmacy-portal",
+      "type": "shell",
+      "command": "volta run --node 20.20.0 npm run dev -- -p 3001",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/pharmacy-portal"
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "portals",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": {
+        "owner": "nextjs",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Next\\.js.*",
+          "endsPattern": ".*(Ready in|Local:).*"
+        }
+      }
+    },
+    {
+      "label": "dev: daycare-portal",
+      "type": "shell",
+      "command": "volta run --node 20.20.0 npm run dev -- -p 3002",
+      "options": {
+        "cwd": "${workspaceFolder}/apps/daycare-portal"
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "portals",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": {
+        "owner": "nextjs",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*Next\\.js.*",
+          "endsPattern": ".*(Ready in|Local:).*"
+        }
+      }
+    },
+    {
+      "label": "dev: all portals",
+      "dependsOn": [
+        "dev: clinic-portal",
+        "dev: pharmacy-portal",
+        "dev: daycare-portal"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

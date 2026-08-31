@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "▶ Clinic Portal (3000)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/apps/clinic-portal/src",
+      "preLaunchTask": "dev: clinic-portal"
+    },
+    {
+      "name": "▶ Pharmacy Portal (3001)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3001",
+      "webRoot": "${workspaceFolder}/apps/pharmacy-portal/src",
+      "preLaunchTask": "dev: pharmacy-portal"
+    },
+    {
+      "name": "▶ Daycare Portal (3002)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3002",
+      "webRoot": "${workspaceFolder}/apps/daycare-portal/src",
+      "preLaunchTask": "dev: daycare-portal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "▶▶ All Portals",
+      "configurations": [
+        "▶ Clinic Portal (3000)",
+        "▶ Pharmacy Portal (3001)",
+        "▶ Daycare Portal (3002)"
+      ],
+      "stopAll": true
+    }
+  ]
+}
