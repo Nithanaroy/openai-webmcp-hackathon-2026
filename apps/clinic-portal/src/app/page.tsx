@@ -1,4 +1,5 @@
 import ClinicPortal from "@/components/ClinicPortal";
+import WebmcpBadge from "@/components/WebmcpBadge";
 
 export default function Home() {
   return (
@@ -38,6 +39,9 @@ export default function Home() {
           <p className="mt-1 text-sm text-slate-500">
             Follow the steps to request a specialist appointment for your child.
           </p>
+          <div className="mt-4">
+            <WebmcpBadge accent="sky" />
+          </div>
         </div>
         <ClinicPortal />
       </main>

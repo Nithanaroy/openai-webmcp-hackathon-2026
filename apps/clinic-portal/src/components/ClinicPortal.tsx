@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer } from "react";
+import { useMemo, useReducer, useRef } from "react";
 import {
   CATEGORIES,
   DISCHARGE_SUMMARY,
@@ -20,6 +20,7 @@ import {
   schedulingReducer,
 } from "@/lib/scheduling";
 import type { Provider, StepId } from "@/lib/types";
+import { useClinicWebmcp, type ClinicApi } from "@/components/useClinicWebmcp";
 
 const STEP_LABELS: Record<StepId, string> = {
   reason: "Reason",
@@ -33,6 +34,12 @@ const STEP_LABELS: Record<StepId, string> = {
 
 export default function ClinicPortal() {
   const [state, dispatch] = useReducer(schedulingReducer, initialState);
+
+  // Expose the same booking logic to a WebMCP agent. The ref keeps tool
+  // handlers reading live state without re-registering on every change.
+  const apiRef = useRef<ClinicApi>({ state, dispatch });
+  apiRef.current = { state, dispatch };
+  useClinicWebmcp(apiRef);
 
   const steps = useMemo(() => computeSteps(state), [state]);
   const currentStep = steps[state.stepIndex];

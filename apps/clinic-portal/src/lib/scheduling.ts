@@ -37,6 +37,7 @@ export type Action =
   | { type: "SET_SLOT"; slotId: string }
   | { type: "NEXT" }
   | { type: "BACK" }
+  | { type: "GOTO"; step: StepId }
   | { type: "CONFIRM"; confirmation: Confirmation }
   | { type: "RESET" };
 
@@ -95,6 +96,11 @@ export function schedulingReducer(
     }
     case "BACK":
       return { ...state, stepIndex: Math.max(state.stepIndex - 1, 0) };
+    case "GOTO": {
+      const steps = computeSteps(state);
+      const idx = steps.indexOf(action.step);
+      return idx >= 0 ? { ...state, stepIndex: idx } : state;
+    }
     case "CONFIRM":
       return { ...state, confirmation: action.confirmation };
     case "RESET":
