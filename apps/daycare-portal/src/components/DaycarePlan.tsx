@@ -10,6 +10,8 @@ import {
 } from "@/lib/data";
 import type { Allergen, PlanForm, Severity } from "@/lib/types";
 import { useDaycareWebmcp, type DaycareApi } from "@/components/useDaycareWebmcp";
+import { useCollab } from "@/lib/collab";
+import { CollabLedger, CollabOverlay } from "@/components/CollabPanel";
 
 const EMPTY: PlanForm = {
   childName: PREFILL.childName ?? "",
@@ -79,6 +81,8 @@ export default function DaycarePlan() {
     }));
   }
 
+  const collab = useCollab();
+
   // Expose the plan actions to a WebMCP agent via a live ref.
   const apiRef = useRef<DaycareApi>({} as DaycareApi);
   apiRef.current = {
@@ -98,21 +102,27 @@ export default function DaycarePlan() {
       }
       return false;
     },
+    finalize: () => setMode("preview"),
+    collab,
   };
   useDaycareWebmcp(apiRef);
 
   if (mode === "preview") {
     return (
-      <PlanDocument
-        form={form}
-        onBack={() => setMode("edit")}
-        onPrint={() => window.print()}
-      />
+      <>
+        <PlanDocument
+          form={form}
+          onBack={() => setMode("edit")}
+          onPrint={() => window.print()}
+        />
+        <CollabOverlay pending={collab.pending} />
+      </>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto grid max-w-5xl gap-6 px-4 py-6 lg:grid-cols-[1fr_300px]">
+      <div>
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         Re-enter your child&apos;s details, allergy, prescribed auto-injector, and
         the allergist appointment from the other systems. This form does not share
@@ -352,6 +362,10 @@ export default function DaycarePlan() {
           Generate action plan
         </button>
       </div>
+      </div>
+
+      <CollabLedger ledger={collab.ledger} pending={collab.pending} />
+      <CollabOverlay pending={collab.pending} />
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   useModelContextTools,
   type WebmcpToolDef,
 } from "@/lib/webmcp";
+import type { CollabController } from "@/lib/collab";
 
 export interface PharmacyApi {
   medicationId: string;
@@ -24,6 +25,7 @@ export interface PharmacyApi {
   search: () => void;
   reserve: (pharmacyId: string) => Reservation;
   cancel: () => void;
+  collab: CollabController;
 }
 
 function resolveMedication(input: string | undefined, fallback: string): string {
@@ -56,6 +58,7 @@ export function usePharmacyWebmcp(apiRef: { current: PharmacyApi }): void {
         annotations: { readOnlyHint: true },
         execute: () => {
           const med = medicationById(PRESCRIPTION.medicationId);
+          apiRef.current.collab.log("agent", "Read the prescribed auto-injector and dose.");
           return {
             medication: med ? `${med.name} ${med.strength}` : PRESCRIPTION.medicationId,
             quantity: PRESCRIPTION.quantity,
@@ -83,6 +86,7 @@ export function usePharmacyWebmcp(apiRef: { current: PharmacyApi }): void {
           const inStock = rows.filter((r) => r.s && r.s.status !== "out");
           const nearest = [...inStock].sort((a, b) => a.p.distanceMiles - b.p.distanceMiles)[0];
           const cheapest = [...inStock].sort((a, b) => a.s.cashPrice - b.s.cashPrice)[0];
+          apiRef.current.collab.log("agent", "Checked availability across nearby pharmacies.");
           return {
             medication: med ? `${med.name} ${med.strength}` : medId,
             in_stock_locations: inStock.length,
@@ -117,6 +121,7 @@ export function usePharmacyWebmcp(apiRef: { current: PharmacyApi }): void {
           apiRef.current.setMedication(medId);
           apiRef.current.setZip(zip);
           apiRef.current.search();
+          apiRef.current.collab.log("agent", `Searched pharmacies near ${zip} and listed results.`);
           const med = medicationById(medId);
           const rows = [...PHARMACIES]
             .sort((a, b) => a.distanceMiles - b.distanceMiles)
@@ -136,25 +141,96 @@ export function usePharmacyWebmcp(apiRef: { current: PharmacyApi }): void {
       },
       {
         name: "reserve_injector",
-        description: "Place a hold for an in-stock auto-injector at a chosen pharmacy.",
+        description:
+          "Reserve an in-stock auto-injector. The parent chooses the pharmacy (if several) and authorizes the hold.",
         inputSchema: {
           type: "object",
           properties: {
-            pharmacy: { type: "string", description: "Pharmacy name or id from the results." },
+            pharmacy: {
+              type: "string",
+              description: "Optional suggested pharmacy name or id. The parent makes the final call.",
+            },
           },
-          required: ["pharmacy"],
           additionalProperties: false,
         },
-        execute: (input) => {
-          const pharmacy = resolvePharmacy(asString(input.pharmacy));
-          if (!pharmacy) return "Pharmacy not found. Use a name from find_pharmacies.";
-          const stock = pharmacy.stock[apiRef.current.medicationId];
-          if (!stock || stock.status === "out") {
-            return `Out of stock at ${pharmacy.name}. Choose a location with availability.`;
+        execute: async (input, ctx) => {
+          const { collab } = apiRef.current;
+          const medId = apiRef.current.medicationId;
+          const med = medicationById(medId);
+          const medLabel = med ? `${med.name} ${med.strength}` : medId;
+          const inStock = [...PHARMACIES]
+            .filter((p) => p.stock[medId] && p.stock[medId].status !== "out")
+            .sort((a, b) => a.distanceMiles - b.distanceMiles);
+          if (inStock.length === 0) {
+            return "No in-stock locations for this dose nearby. Try a different medication or ZIP.";
           }
+          const suggested = resolvePharmacy(asString(input.pharmacy));
+
+          // Judgment gate: which pharmacy (distance vs price vs hours).
+          let chosenId: string;
+          if (inStock.length === 1) {
+            chosenId = inStock[0].id;
+          } else {
+            collab.log("agent", `Found ${inStock.length} in-stock options; prepared a comparison.`);
+            const options = inStock.map((p) => {
+              const s = p.stock[medId];
+              return {
+                id: p.id,
+                label: p.name,
+                sublabel: `${p.distanceMiles} mi${p.open24h ? " · open 24h" : ""}`,
+                badge: `$${s.cashPrice}`,
+                suggested: suggested?.id === p.id,
+                attributes: [
+                  { label: "Distance", value: `${p.distanceMiles} mi` },
+                  { label: "Price (cash)", value: `$${s.cashPrice}` },
+                  { label: "In stock", value: `${s.units} units` },
+                  { label: "Hours", value: p.open24h ? "Open 24 hours" : "Standard hours" },
+                ],
+              };
+            });
+            try {
+              chosenId = await collab.requestDecision(
+                {
+                  title: "Choose a pharmacy",
+                  prompt: "These carry the pediatric dose right now. Weigh distance, price, and hours.",
+                  options,
+                },
+                ctx?.signal,
+              );
+            } catch {
+              return "Still waiting on the parent to choose a pharmacy.";
+            }
+          }
+          const pharmacy = PHARMACIES.find((p) => p.id === chosenId)!;
+          const stock = pharmacy.stock[medId];
+
+          // Commit gate: authorize the hold.
+          collab.log("agent", `Prepared a hold at ${pharmacy.name}.`);
+          let approved: boolean;
+          try {
+            approved = await collab.requestConfirm(
+              {
+                title: "Confirm pharmacy hold",
+                intro:
+                  "Places a 30-minute hold so it's guaranteed at pickup. Nothing is charged now.",
+                rows: [
+                  { label: "Medication", value: medLabel },
+                  { label: "Pharmacy", value: pharmacy.name },
+                  { label: "Address", value: `${pharmacy.address} · ${pharmacy.distanceMiles} mi` },
+                  { label: "Price (cash)", value: `$${stock.cashPrice}` },
+                  { label: "Hold", value: `${RESERVATION_MINUTES} minutes` },
+                ],
+                confirmLabel: "Place hold",
+                caution: "Holds a real unit for pickup.",
+              },
+              ctx?.signal,
+            );
+          } catch {
+            return "The hold is waiting on the parent's confirmation.";
+          }
+          if (!approved) return "The parent declined the hold.";
           const r = apiRef.current.reserve(pharmacy.id);
-          const med = medicationById(apiRef.current.medicationId);
-          return `Reserved ${med ? `${med.name} ${med.strength}` : "medication"} at ${pharmacy.name}. Code ${r.code}, held ${RESERVATION_MINUTES} min.`;
+          return `Reserved ${medLabel} at ${pharmacy.name}. Code ${r.code}, held ${RESERVATION_MINUTES} min.`;
         },
       },
       {

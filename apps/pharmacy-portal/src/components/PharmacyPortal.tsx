@@ -11,6 +11,8 @@ import {
 } from "@/lib/data";
 import type { Pharmacy, Reservation, StockStatus } from "@/lib/types";
 import { usePharmacyWebmcp, type PharmacyApi } from "@/components/usePharmacyWebmcp";
+import { useCollab } from "@/lib/collab";
+import { CollabLedger, CollabOverlay } from "@/components/CollabPanel";
 
 const STATUS_META: Record<StockStatus, { label: string; cls: string }> = {
   "in-stock": { label: "In stock", cls: "bg-emerald-100 text-emerald-700" },
@@ -25,6 +27,7 @@ export default function PharmacyPortal() {
   const [searching, setSearching] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [reservation, setReservation] = useState<Reservation | null>(null);
+  const collab = useCollab();
 
   const medication = medicationById(medicationId);
   const zipValid = isValidZip(zip);
@@ -78,6 +81,7 @@ export default function PharmacyPortal() {
       return reserve(pharmacy);
     },
     cancel: () => setReservation(null),
+    collab,
   };
   usePharmacyWebmcp(apiRef);
 
@@ -86,7 +90,8 @@ export default function PharmacyPortal() {
   ).length;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
+    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_300px]">
+      <div>
       {reservation && (
         <ReservationBanner
           reservation={reservation}
@@ -241,6 +246,10 @@ export default function PharmacyPortal() {
           Enter your ZIP code and check stock to find a pharmacy.
         </p>
       )}
+      </div>
+
+      <CollabLedger ledger={collab.ledger} pending={collab.pending} />
+      <CollabOverlay pending={collab.pending} />
     </div>
   );
 }

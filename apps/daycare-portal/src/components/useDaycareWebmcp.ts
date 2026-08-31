@@ -12,6 +12,7 @@ import {
   useModelContextTools,
   type WebmcpToolDef,
 } from "@/lib/webmcp";
+import type { CollabController } from "@/lib/collab";
 
 export interface DaycareApi {
   form: PlanForm;
@@ -20,6 +21,8 @@ export interface DaycareApi {
   addAllergen: (name: string, severity: Severity) => void;
   setSymptoms: (symptoms: string[]) => void;
   generate: () => boolean;
+  finalize: () => void;
+  collab: CollabController;
 }
 
 function normalizeSeverity(value: string | undefined): Severity {
@@ -103,6 +106,7 @@ export function useDaycareWebmcp(apiRef: { current: DaycareApi }): void {
           if (gName) patch.guardianName = gName;
           if (gPhone) patch.guardianPhone = gPhone;
           apiRef.current.patch(patch);
+          apiRef.current.collab.log("agent", "Filled in the child and guardian details.");
           return "Child information updated.";
         },
       },
@@ -127,6 +131,7 @@ export function useDaycareWebmcp(apiRef: { current: DaycareApi }): void {
           if (!name) return "Provide an allergen name.";
           const severity = normalizeSeverity(asString(input.severity));
           apiRef.current.addAllergen(name, severity);
+          apiRef.current.collab.log("agent", `Added allergen: ${name} (${severity}).`);
           return `Added ${name} (${severity}).`;
         },
       },
@@ -148,6 +153,7 @@ export function useDaycareWebmcp(apiRef: { current: DaycareApi }): void {
         execute: (input) => {
           const symptoms = asStringArray(input.symptoms);
           apiRef.current.setSymptoms(symptoms);
+          apiRef.current.collab.log("agent", `Recorded ${symptoms.length} symptom(s) to watch for.`);
           return `Recorded ${symptoms.length} symptom(s).`;
         },
       },
@@ -169,6 +175,7 @@ export function useDaycareWebmcp(apiRef: { current: DaycareApi }): void {
           if (med) patch.epinephrineMedication = med;
           if (loc) patch.epinephrineLocation = loc;
           apiRef.current.patch(patch);
+          apiRef.current.collab.log("agent", "Recorded the emergency medication and storage location.");
           return "Emergency medication details updated.";
         },
       },
@@ -196,28 +203,77 @@ export function useDaycareWebmcp(apiRef: { current: DaycareApi }): void {
           if (phone) patch.physicianPhone = phone;
           if (appt) patch.appointmentInfo = appt;
           apiRef.current.patch(patch);
+          apiRef.current.collab.log("agent", "Recorded the managing allergist and appointment.");
           return "Allergist and appointment updated.";
         },
       },
       {
         name: "sign_plan",
-        description: "Add the guardian's signature and today's date to authorize the plan.",
+        description:
+          "Present the completed plan for the guardian to review and authorize with their signature.",
         inputSchema: {
           type: "object",
           properties: {
-            guardian_name: { type: "string", description: "Full name to sign as." },
+            guardian_name: { type: "string", description: "Full name to sign as. Defaults to the guardian on file." },
           },
-          required: ["guardian_name"],
           additionalProperties: false,
         },
-        execute: (input) => {
-          const name = asString(input.guardian_name);
+        execute: async (input, ctx) => {
+          const { form, collab } = apiRef.current;
+          const name = asString(input.guardian_name) || form.guardianName;
           if (!name) return "Provide the guardian's full name to sign.";
+          const missing: string[] = [];
+          if (!form.childName) missing.push("child name");
+          if (!form.childDob) missing.push("date of birth");
+          if (!form.guardianPhone) missing.push("guardian phone");
+          if (form.allergens.length === 0) missing.push("at least one allergen");
+          if (!form.epinephrineLocation) missing.push("auto-injector storage location");
+          if (missing.length) {
+            return `The plan isn't ready to sign yet. Still missing: ${missing.join(", ")}.`;
+          }
+          collab.log("agent", "Prepared the completed action plan for your review.");
+          const rows = [
+            { label: "Child", value: `${form.childName} (DOB ${form.childDob})` },
+            { label: "Guardian", value: `${form.guardianName} · ${form.guardianPhone}` },
+            {
+              label: "Allergens",
+              value: form.allergens.map((a) => `${a.name} (${a.severity})`).join(", "),
+            },
+            { label: "Watch for", value: form.symptoms.length ? form.symptoms.join(", ") : "—" },
+            {
+              label: "Auto-injector",
+              value: `${form.epinephrineMedication || "prescribed injector"} · ${form.epinephrineLocation}`,
+            },
+            {
+              label: "Allergist",
+              value:
+                [form.physicianName, form.appointmentInfo].filter(Boolean).join(" · ") || "—",
+            },
+          ];
+          let approved: boolean;
+          try {
+            approved = await collab.requestConfirm(
+              {
+                title: "Review & sign the allergy action plan",
+                intro:
+                  "This is the plan daycare staff will follow in an emergency. Review it, then authorize it with your signature.",
+                rows,
+                confirmLabel: `Sign as ${name}`,
+                caution:
+                  "Signing authorizes daycare staff to administer epinephrine according to this plan.",
+              },
+              ctx?.signal,
+            );
+          } catch {
+            return "The plan is waiting on the guardian's signature.";
+          }
+          if (!approved) return "The guardian hasn't signed the plan yet.";
           apiRef.current.patch({
             signature: name,
             signedDate: new Date().toISOString().slice(0, 10),
           });
-          return `Signed by ${name}.`;
+          apiRef.current.finalize();
+          return `Signed by ${name}. The action plan is generated and ready to print or save as PDF.`;
         },
       },
       {
