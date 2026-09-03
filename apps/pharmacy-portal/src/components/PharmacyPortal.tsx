@@ -294,49 +294,22 @@ function ReservationBanner({
 
   return (
     <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white">
-              Reserved for pickup
-            </span>
-            <span className="font-mono text-xs font-semibold text-emerald-700">
-              {reservation.code}
-            </span>
-          </div>
-          <p className="mt-2 text-sm font-semibold text-emerald-900">
-            {medication?.name} {medication?.strength}
-            {reservation.medicationId === PRESCRIPTION.medicationId
-              ? ` · qty ${PRESCRIPTION.quantity}`
-              : ""}
-          </p>
-          <p className="text-sm text-emerald-800">
-            {pharmacy?.name}
-            {pharmacy?.open24h ? " (open 24h)" : ""}
-            {pharmacy ? ` · ${pharmacy.address} · ${pharmacy.distanceMiles} mi` : ""}
-          </p>
-          <p className="mt-2 rounded-lg bg-white/70 px-3 py-2 text-sm font-medium text-emerald-900">
-            <span className="font-semibold">Next step:</span> head to {pharmacy?.name}{" "}
-            to pick it up before the hold expires. Bring a photo ID and the
-            prescription.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white">
+            Reserved for pickup
+          </span>
+          <span className="font-mono text-xs font-semibold text-emerald-700">
+            {reservation.code}
+          </span>
         </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="rounded-lg bg-white px-3 py-1.5 text-right">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-emerald-600">
-              Expires in
-            </p>
-            <p className="font-mono text-lg font-semibold text-emerald-700">
-              {mins}:{secs.toString().padStart(2, "0")}
-            </p>
-          </div>
+        <div className="flex items-center gap-3">
           {directionsUrl && (
             <a
               href={directionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
+              className="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700"
             >
               Get directions
             </a>
@@ -348,6 +321,34 @@ function ReservationBanner({
           >
             Cancel hold
           </button>
+        </div>
+      </div>
+
+      <p className="mt-2 text-sm font-semibold text-emerald-900">
+        {medication?.name} {medication?.strength}
+        {reservation.medicationId === PRESCRIPTION.medicationId
+          ? ` · qty ${PRESCRIPTION.quantity}`
+          : ""}
+      </p>
+      <p className="text-sm text-emerald-800">
+        {pharmacy?.name}
+        {pharmacy?.open24h ? " (open 24h)" : ""}
+        {pharmacy ? ` · ${pharmacy.address} · ${pharmacy.distanceMiles} mi` : ""}
+      </p>
+
+      <div className="mt-2 flex items-center gap-4 rounded-lg bg-white/70 px-3 py-2">
+        <p className="flex-1 text-sm font-medium text-emerald-900">
+          <span className="font-semibold">Next step:</span> head to {pharmacy?.name}{" "}
+          to pick it up before the hold expires. Bring a photo ID and the
+          prescription.
+        </p>
+        <div className="shrink-0 text-right">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-emerald-600">
+            Expires in
+          </p>
+          <p className="font-mono text-lg font-semibold text-emerald-700">
+            {mins}:{secs.toString().padStart(2, "0")}
+          </p>
         </div>
       </div>
     </div>
