@@ -16,6 +16,49 @@ JavaScript in the page (for example through a DevTools / `evaluate` channel).
   what inputs they take, and the data behind them all come from discovering and
   calling the tools — and from what the user tells you.
 
+## Accessing the page (non-browser agents via Chrome DevTools MCP)
+
+Everything below runs JavaScript in the page. If your channel is **Chrome
+DevTools MCP** (e.g. Copilot CLI with the `chrome-devtools` MCP server), reach
+`document.modelContext` like this:
+
+1. **Get a page handle** — open the URL with `new_page(url)`, or find an already
+   open tab with `list_pages` + `select_page`, to obtain a `pageId`.
+2. **Run WebMCP JS** with the `evaluate_script(pageId, fn)` tool, passing an
+   `async` function that uses `document.modelContext`. `evaluate_script` returns
+   **JSON-serializable** values, so return plain strings/objects (not a raw tool
+   handle).
+
+```js
+// evaluate_script(pageId, fn):
+async () => {
+  const tools = await document.modelContext.getTools();
+  return tools.map(t => ({ name: t.name, description: t.description }));
+}
+```
+
+### Tools that wait for the user (fire-and-poll)
+
+Some tools don't resolve until the user acts on the page (see *Call a tool*). If
+you `await` such a call **inside a single `evaluate_script`**, that call hangs
+until the user clicks — and may hit the MCP timeout. Instead **fire-and-poll**:
+
+```js
+// 1) Start the call, DON'T await it; stash the promise on window:
+async () => {
+  const t = (await document.modelContext.getTools()).find(x => x.name === NAME);
+  window.__p = document.modelContext.executeTool(t, JSON.stringify(ARGS));
+  window.__done = undefined;
+  window.__p.then(v => (window.__done = v));
+  return "started";
+}
+
+// 2) The user acts on the page (clicks the card / confirms the dialog).
+
+// 3) Read the resolved result in a LATER evaluate_script:
+async () => window.__done ?? "still waiting";
+```
+
 ## Detect support
 
 ```js
@@ -50,10 +93,12 @@ async function call(name, args = {}) {
 - `executeTool` takes the **tool object** (from `getTools()`) and its arguments
   as a **JSON string**.
 - The result comes back as a **string** — parse it if it is JSON.
-- `await` every call. A tool may not resolve immediately: it can **pause until
-  the user acts on the page** (for example a card or dialog it renders for a
-  choice or a confirmation). That is intended — let the user act, and the call
-  resolves. Do not try to bypass it.
+- Read/inform tools resolve immediately. A tool that needs a human **decision or
+  confirmation stays pending until the user acts on the page** (a card or dialog
+  it renders); it resolves when they do. That pause is intended — don't try to
+  bypass it. If you are driving through `evaluate_script`, don't `await` such a
+  call inside one script (it will hang the call) — use the fire-and-poll pattern
+  under *Accessing the page*.
 
 ## The tool set can change
 
