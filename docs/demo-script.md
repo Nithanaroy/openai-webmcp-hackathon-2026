@@ -1,14 +1,16 @@
-# Demo script — the human's prompts
+# Demo script — the human's prompts & clicks
 
-You play the parent. Open each portal, **paste the prompt** to your agent, let it
-work, and **click the on-screen card** when it appears. The prompts carry the
-facts a parent would naturally know — the agent discovers everything else from the
-page's tools.
+You play the parent. You interact in **two ways, and each step needs only one of
+them**:
 
-> The agent gets no app-specific briefing (see
-> [agent-context-for-demo.md](agent-context-for-demo.md)) — only these spoken
-> prompts + whatever it discovers on the page. That mirrors a real judge's
-> browser agent.
+- **Type** (paste to the agent) — only to *start* a task on a portal.
+- **Click** (on the page) — only when the site *pauses for your decision or
+  authorization*. The click **is** your answer; you don't also type it.
+
+> Your clicks are the human-in-the-loop the site is built around. They do **not**
+> violate the agent's "no DOM actions" rule — that rule is for the *agent* (it
+> must never scrape or click). You, the human, click the cards it surfaces. The
+> agent still does all the driving through WebMCP tools.
 
 ## Portals
 
@@ -24,7 +26,9 @@ page's tools.
 
 ## Act 1 — Clinic
 
-**Open** the clinic URL, point the agent at the page, then paste:
+**Open** the clinic URL and point the agent at the page.
+
+**⌨️ Type to the agent** (this is your only typing for this act):
 
 ```
 We just got back from urgent care — my son Joey broke out in hives about 20
@@ -36,39 +40,41 @@ group number is BP482019.
 ```
 
 The assistant reads the chart, explains the jargon, and drafts the visit,
-screening, and insurance. It then **stops at a card asking you to choose a
-scheduling path.** Paste:
+screening, and insurance. Then it **pauses** and hands you two decisions:
 
-```
-I can't wait three weeks and worry at daycare every day. Let's do the soonest one.
-```
+- **🖱️ Click** the soonest scheduling option (your choice — no need to type it).
+- **🖱️ Click Confirm booking** on the review card (your authorization).
 
-**👉 Click** the soonest option, then **Confirm booking** when the review appears.
+*(To camera, while the choice card is open: "I can't wait three weeks and worry
+at daycare every day — I'll take the soonest one.")*
 
 ---
 
 ## Act 2 — Pharmacy
 
-**Open** the pharmacy URL, point the agent at the page, then paste:
+**Open** the pharmacy URL and point the agent at the page.
+
+**⌨️ Type to the agent:**
 
 ```
 Now I need to actually get the EpiPen Jr. Can you find one in stock near me? My
 ZIP is 94110.
 ```
 
-The assistant searches and **stops at a card asking which pharmacy.** Paste:
+The assistant searches, then **pauses**:
 
-```
-The closest 24-hour one is fine — go ahead and hold it.
-```
+- **🖱️ Click** the pharmacy you want (weigh distance / price / hours — your call).
+- **🖱️ Click Place hold** to authorize it. (A 30-minute countdown starts.)
 
-**👉 Click** that pharmacy, then **Place hold**. (A 30-minute countdown starts.)
+*(To camera: "The closest 24-hour one is fine — hold it.")*
 
 ---
 
 ## Act 3 — Daycare
 
-**Open** the daycare URL, point the agent at the page, then paste:
+**Open** the daycare URL and point the agent at the page.
+
+**⌨️ Type to the agent:**
 
 ```
 Joey's daycare needs an allergy action plan before Monday. It's for Joey Rivera —
@@ -79,15 +85,19 @@ Clinic, with an appointment tomorrow at 9 AM. I'm Dana Rivera and my number is
 ```
 
 The assistant fills the plan (and flags cross-reactive foods to raise with the
-allergist), then **stops at a review card for your signature.** Paste:
+allergist), then **pauses** at a review card:
 
-```
-That all looks right — sign it as Dana Rivera.
-```
+- **🖱️ Click Sign** to authorize the plan, then **Print / Save as PDF**.
 
-**👉 Click** **Sign**, then **Print / Save as PDF**.
+*(To camera: "That all looks right — sign it as Dana Rivera.")*
 
 ---
+
+## The one-line version of the whole demo
+
+**You type three times (once to start each portal) and click at each pause.** The
+agent does everything in between through the site's WebMCP tools; you only ever
+make the judgment calls and the authorizations.
 
 ## Narration beats (say these while the cards are open)
 
