@@ -37,27 +37,24 @@ async () => {
 }
 ```
 
-### Tools that wait for the user (fire-and-poll)
+### Tools that wait for the user
 
-Some tools don't resolve until the user acts on the page (see *Call a tool*). If
-you `await` such a call **inside a single `evaluate_script`**, that call hangs
-until the user clicks — and may hit the MCP timeout. Instead **fire-and-poll**:
+Some tools don't resolve until the user acts on the page (see *Call a tool*).
+Just `await` the call inside the `evaluate_script` — it returns as soon as the
+user clicks the card / confirms the dialog:
 
 ```js
-// 1) Start the call, DON'T await it; stash the promise on window:
 async () => {
   const t = (await document.modelContext.getTools()).find(x => x.name === NAME);
-  window.__p = document.modelContext.executeTool(t, JSON.stringify(ARGS));
-  window.__done = undefined;
-  window.__p.then(v => (window.__done = v));
-  return "started";
+  const res = await document.modelContext.executeTool(t, JSON.stringify(ARGS));
+  try { return JSON.parse(res); } catch { return res; }
 }
-
-// 2) The user acts on the page (clicks the card / confirms the dialog).
-
-// 3) Read the resolved result in a LATER evaluate_script:
-async () => window.__done ?? "still waiting";
 ```
+
+The `evaluate_script` call blocks while it waits, so make sure the user acts
+before the call's timeout. If your `evaluate_script` exposes a `timeout`, raise it
+(e.g. `60000` ms) to give the user time. Don't poll in a loop — a single awaiting
+call is simpler and won't stop early.
 
 ## Detect support
 
@@ -96,9 +93,8 @@ async function call(name, args = {}) {
 - Read/inform tools resolve immediately. A tool that needs a human **decision or
   confirmation stays pending until the user acts on the page** (a card or dialog
   it renders); it resolves when they do. That pause is intended — don't try to
-  bypass it. If you are driving through `evaluate_script`, don't `await` such a
-  call inside one script (it will hang the call) — use the fire-and-poll pattern
-  under *Accessing the page*.
+  bypass it. If you are driving through `evaluate_script`, simply `await` the call
+  (see *Accessing the page*) and give the user time to click before the timeout.
 
 ## The tool set can change
 
