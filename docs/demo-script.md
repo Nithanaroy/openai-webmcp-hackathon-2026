@@ -26,17 +26,19 @@ them**:
 
 ## Act 1 — Clinic
 
-**Open** the clinic URL and point the agent at the page.
+**Point the agent at the clinic.** The prompt includes the URL, so the agent can
+open the page itself.
 
 **⌨️ Type to the agent** (this is your only typing for this act):
 
 ```
 We just got back from urgent care — my son Joey broke out in hives about 20
 minutes after eating peanut butter. They prescribed an EpiPen but didn't need to
-use it, and said to see an allergist urgently. I'm on our clinic portal and I'm
-completely lost, and I don't understand half of this discharge sheet. Can you get
-the right appointment started for me? I've got our BluePeak PPO card here — the
-group number is BP482019.
+use it, and said to see an allergist urgently. Our clinic portal is
+https://clinic-portal-eta-beryl.vercel.app — I'm completely lost, and I don't
+understand half of this discharge sheet. Can you get the right appointment
+started for me? I've got our BluePeak PPO card here — the group number is
+BP482019.
 ```
 
 The assistant reads the chart, explains the jargon, and drafts the visit,
@@ -52,13 +54,15 @@ at daycare every day — I'll take the soonest one.")*
 
 ## Act 2 — Pharmacy
 
-**Open** the pharmacy URL and point the agent at the page.
+**Point the agent at the pharmacy.** The prompt includes the URL, so the agent
+can open the page itself.
 
 **⌨️ Type to the agent:**
 
 ```
-Now I need to actually get the EpiPen Jr. Can you find one in stock near me? My
-ZIP is 94110.
+Now I need to actually get the EpiPen Jr. On this pharmacy site —
+https://pharmacy-portal-pi.vercel.app — can you find one in stock near me? My ZIP
+is 94110.
 ```
 
 The assistant searches, then **pauses**:
@@ -72,16 +76,17 @@ The assistant searches, then **pauses**:
 
 ## Act 3 — Daycare
 
-**Open** the daycare URL and point the agent at the page.
+**Point the agent at the daycare.** The prompt includes the URL, so the agent can
+open the page itself.
 
 **⌨️ Type to the agent:**
 
 ```
-Joey's daycare needs an allergy action plan before Monday. It's for Joey Rivera —
-severe peanut allergy. His EpiPen Jr is kept in the front office medication
-cabinet. Our allergist is Dr. Maria Chen at Riverside Regional Allergy & Asthma
-Clinic, with an appointment tomorrow at 9 AM. I'm Dana Rivera and my number is
-(555) 812-4407.
+Joey's daycare needs an allergy action plan before Monday — the daycare portal is
+https://daycare-portal.vercel.app. It's for Joey Rivera — severe peanut allergy.
+His EpiPen Jr is kept in the front office medication cabinet. Our allergist is Dr.
+Maria Chen at Riverside Regional Allergy & Asthma Clinic, with an appointment
+tomorrow at 9 AM. I'm Dana Rivera and my number is (555) 812-4407.
 ```
 
 The assistant fills the plan (and flags cross-reactive foods to raise with the
