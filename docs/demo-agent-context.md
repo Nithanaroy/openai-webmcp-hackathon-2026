@@ -21,11 +21,11 @@ It contains:
 
 ## 0. Environment
 
-| Portal | URL (local dev) | What it does |
-|---|---|---|
-| Clinic — HealthConnect MyChart | http://localhost:3000 | Book the urgent allergist referral |
-| Pharmacy — CarePoint | http://localhost:3001 | Find & hold an in-stock auto-injector |
-| Daycare — BrightPath | http://localhost:3002 | Fill & sign the allergy action plan |
+| Portal | Local dev | Production (Vercel) | What it does |
+|---|---|---|---|
+| Clinic — HealthConnect MyChart | http://localhost:3000 | https://clinic-portal-eta-beryl.vercel.app | Book the urgent allergist referral |
+| Pharmacy — CarePoint | http://localhost:3001 | https://pharmacy-portal-pi.vercel.app | Find & hold an in-stock auto-injector |
+| Daycare — BrightPath | http://localhost:3002 | https://daycare-portal.vercel.app | Fill & sign the allergy action plan |
 
 Key facts about the environment:
 
