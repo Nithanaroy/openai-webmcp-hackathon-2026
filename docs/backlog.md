@@ -11,9 +11,7 @@ Deferred items to revisit. Not in priority order.
 - [ ] Make the GitHub repo public (github.com/Nithanaroy/openai-webmcp-hackathon-2026).
       Required by the WebMCP Challenge rules; must also include a detectable
       open-source LICENSE file visible in the repo About section. (Added 2026-09-02.)
-- [ ] Revise the Devpost "testing instructions" (Additional info step). The current
-      text lists the three site URLs but doesn't convey the **cross-tab interaction**
-      and the **context the agent must carry between portals** (the sites share no
-      state — the agent/human stitches child info, allergen, appointment, Rx across
-      clinic → pharmacy → daycare). Judges need to know they must drive each tab in
-      sequence and hand context forward. (Added 2026-09-02.)
+- [x] Revise the Devpost "testing instructions" (Additional info step). Done
+      2026-09-03 — rewritten from the ChatGPT demo script: frames one journey
+      across three separate sites (agent carries context between them) and steers
+      judges to observe the agent's JUDGEMENT and COMMIT pauses on each portal.
