@@ -1,5 +1,9 @@
 # Demo script — the human's prompts & clicks
 
+> For a **non-browser agent** (e.g. Copilot CLI + Chrome DevTools MCP) paired with
+> [agent-context-for-demo.md](agent-context-for-demo.md). For the **ChatGPT in-app
+> browser** agent, use [demo-script-chatgpt.md](demo-script-chatgpt.md) instead.
+
 You play the parent. You interact in **two ways, and each step needs only one of
 them**:
 
