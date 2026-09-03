@@ -72,7 +72,9 @@ is 94110.
 The assistant searches, then **pauses**:
 
 - **🖱️ Click** the pharmacy you want (weigh distance / price / hours — your call).
-- **🖱️ Click Place hold** to authorize it. (A 30-minute countdown starts.)
+- **🖱️ Click Place hold** to authorize it. The banner then shows the **pickup
+  action** — the item, the pharmacy address, and a 30-minute countdown to go
+  collect it.
 
 *(To camera: "The closest 24-hour one is fine — hold it.")*
 

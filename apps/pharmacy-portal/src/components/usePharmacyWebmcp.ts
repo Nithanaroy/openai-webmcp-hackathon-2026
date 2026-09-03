@@ -230,7 +230,7 @@ export function usePharmacyWebmcp(apiRef: { current: PharmacyApi }): void {
           }
           if (!approved) return "The parent declined the hold.";
           const r = apiRef.current.reserve(pharmacy.id);
-          return `Reserved ${medLabel} at ${pharmacy.name}. Code ${r.code}, held ${RESERVATION_MINUTES} min.`;
+          return `Reserved ${medLabel} at ${pharmacy.name}. Code ${r.code}, held ${RESERVATION_MINUTES} min. Next: pick it up at ${pharmacy.name} (${pharmacy.address}) before the hold expires — bring a photo ID and the prescription.`;
         },
       },
       {
