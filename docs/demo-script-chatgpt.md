@@ -95,16 +95,17 @@ The assistant searches via site tools, then **pauses**:
 Open the daycare portal at https://daycare-portal.vercel.app and use its built-in
 site tools (WebMCP) — don't fill the form by clicking or typing yourself.
 
-Joey's daycare needs an allergy action plan. It's for Joey Rivera — severe peanut
-allergy. His EpiPen Jr is kept in the front office medication cabinet. Our
-allergist is Dr. Maria Chen at Riverside Regional Allergy & Asthma Clinic, for the
-soonest appointment we just booked. I'm Dana Rivera and my number is
-(555) 812-4407. It's a demo, so use whatever dates the tools accept — don't block
-on a specific calendar date.
+Joey's daycare needs an allergy action plan. Fill it using what we already set up
+on the clinic and pharmacy — his allergy, his auto-injector, and the allergist and
+appointment you just booked. The only new details are that his EpiPen Jr is kept
+in the front office medication cabinet, and my number is (555) 812-4407. It's a
+demo, so use whatever dates the tools accept. Then I'll review and sign.
 ```
 
-The assistant fills the plan via site tools (and flags cross-reactive foods to
-raise with the allergist), then **pauses** at a review card:
+The assistant fills the plan via site tools **from memory** — the allergy,
+auto-injector, and appointment carry over from the last two sites (it also flags
+cross-reactive foods to raise with the allergist). Then it **pauses** at a review
+card:
 
 - **🖱️ Click Sign** to authorize the plan, then **Print / Save as PDF**.
 

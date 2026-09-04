@@ -88,15 +88,17 @@ open the page itself.
 **⌨️ Type to the agent:**
 
 ```
-Joey's daycare needs an allergy action plan before Monday — the daycare portal is
-https://daycare-portal.vercel.app. It's for Joey Rivera — severe peanut allergy.
-His EpiPen Jr is kept in the front office medication cabinet. Our allergist is Dr.
-Maria Chen at Riverside Regional Allergy & Asthma Clinic, with an appointment
-tomorrow at 9 AM. I'm Dana Rivera and my number is (555) 812-4407.
+Joey's daycare needs an allergy action plan — the daycare portal is
+https://daycare-portal.vercel.app. Fill it in using what we already set up on the
+clinic and pharmacy: his allergy, his auto-injector, and the allergist and
+appointment you just booked. The only new details are that his EpiPen Jr is kept
+in the front office medication cabinet, and my number is (555) 812-4407. Then
+I'll review and sign.
 ```
 
-The assistant fills the plan (and flags cross-reactive foods to raise with the
-allergist), then **pauses** at a review card:
+The assistant fills the plan **from memory** — the allergy, auto-injector, and
+appointment carry over from the last two sites (it also flags cross-reactive foods
+to raise with the allergist). Then it **pauses** at a review card:
 
 - **🖱️ Click Sign** to authorize the plan, then **Print / Save as PDF**.
 
