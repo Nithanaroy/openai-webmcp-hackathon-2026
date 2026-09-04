@@ -8,6 +8,13 @@ import { useEffect, useRef } from "react";
 export interface WebmcpAnnotations {
   readOnlyHint?: boolean;
   untrustedContentHint?: boolean;
+  /**
+   * High-stakes / irreversible / real-world action. Standardized in Chrome 154
+   * (ToolAnnotations.consequentialHint) to signal agents to require explicit
+   * user confirmation before executing. Our commit-gate tools also enforce the
+   * pause: an async execute that awaits the human's on-page confirmation.
+   */
+  consequentialHint?: boolean;
 }
 
 export interface WebmcpToolDef {

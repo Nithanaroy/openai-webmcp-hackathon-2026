@@ -218,6 +218,9 @@ export function useDaycareWebmcp(apiRef: { current: DaycareApi }): void {
           },
           additionalProperties: false,
         },
+        // Consequential: authorizes the signed plan. Chrome 154 consequentialHint
+        // tells agents to confirm first; our commit gate also blocks until the human does.
+        annotations: { readOnlyHint: false, consequentialHint: true },
         execute: async (input, ctx) => {
           const { form, collab } = apiRef.current;
           const name = asString(input.guardian_name) || form.guardianName;
