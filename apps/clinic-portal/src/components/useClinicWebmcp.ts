@@ -343,9 +343,6 @@ export function useClinicWebmcp(apiRef: { current: ClinicApi }): void {
           },
           additionalProperties: false,
         },
-        // Consequential: books a real slot. Chrome 154 consequentialHint tells
-        // agents to confirm first; our commit gate also blocks until the human does.
-        annotations: { readOnlyHint: false, consequentialHint: true },
         execute: async (input, ctx) => {
           const { state, dispatch, collab } = apiRef.current;
           if (!state.visitType) return "Set the visit type first (set_visit_details).";

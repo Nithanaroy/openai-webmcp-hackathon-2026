@@ -153,9 +153,6 @@ export function usePharmacyWebmcp(apiRef: { current: PharmacyApi }): void {
           },
           additionalProperties: false,
         },
-        // Consequential: places a real hold. Chrome 154 consequentialHint tells
-        // agents to confirm first; our commit gate also blocks until the human does.
-        annotations: { readOnlyHint: false, consequentialHint: true },
         execute: async (input, ctx) => {
           const { collab } = apiRef.current;
           const medId = apiRef.current.medicationId;
